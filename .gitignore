@@ -10,3 +10,6 @@ ENV/
 .idea/
 .vscode/
 .DS_Store
+/data
+/mapas
+/tabelas

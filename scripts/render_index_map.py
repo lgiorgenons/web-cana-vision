@@ -6,9 +6,11 @@ result as a folium overlay so that it can be inspected in any browser.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional, Sequence, Tuple, Dict, Any
+from typing import Iterable, List, Optional, Sequence, Tuple, Dict, Any
 
 import folium
 import numpy as np
@@ -18,7 +20,7 @@ from branca.colormap import LinearColormap
 from matplotlib import colormaps, colors
 from rasterio.enums import Resampling
 from rasterio.features import rasterize
-from rasterio.transform import array_bounds
+from rasterio.transform import array_bounds, xy
 from rasterio.warp import calculate_default_transform, reproject, transform_bounds
 from rasterio.windows import from_bounds
 from scipy.ndimage import gaussian_filter
@@ -26,6 +28,16 @@ from scipy.ndimage import gaussian_filter
 
 DEFAULT_CMAP = "RdYlGn"
 TARGET_CRS = "EPSG:4326"
+
+
+@dataclass
+class PreparedRaster:
+    data: np.ndarray
+    transform: Affine
+    bounds: Tuple[float, float, float, float]
+    clip_bounds: Optional[Tuple[float, float, float, float]]
+    overlay_geojsons: List[Dict[str, Any]]
+    index_name: str
 
 
 def _load_raster(path: Path, clip_bounds_wgs84: Optional[Tuple[float, float, float, float]] = None) -> Tuple[np.ndarray, rasterio.Affine, Sequence[float]]:
@@ -120,6 +132,28 @@ def _iterate_geometries(geometry: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
             yield {"type": "Polygon", "coordinates": polygon}
 
 
+def _apply_overlay_mask(
+    data: np.ndarray,
+    transform: Affine,
+    overlay_geojsons: Sequence[Dict[str, Any]],
+) -> np.ndarray:
+    shapes = []
+    for geojson_data in overlay_geojsons:
+        for geom in _iterate_geometries(geojson_data):
+            shapes.append((geom, 1))
+    if not shapes:
+        return data
+    mask = rasterize(
+        shapes=shapes,
+        out_shape=data.shape,
+        transform=transform,
+        fill=0,
+        all_touched=False,
+        dtype=np.uint8,
+    )
+    return np.where(mask == 1, data, np.nan)
+
+
 def _add_geojson_layer(map_obj: folium.Map, geojson_data: Dict[str, Any]) -> None:
     folium.GeoJson(data=geojson_data, name="Area de interesse", style_function=lambda _: {"fillOpacity": 0}).add_to(map_obj)
 
@@ -206,33 +240,20 @@ def _upsample_raster(
     return destination, new_transform
 
 
-def build_map(
-    index_path: Path,
-    output_path: Path,
-    cmap_name: str = DEFAULT_CMAP,
-    vmin: Optional[float] = None,
-    vmax: Optional[float] = None,
-    opacity: float = 0.75,
-    overlays: Optional[Iterable[Path]] = None,
-    tiles: str = "CartoDB positron",
-    tile_attr: Optional[str] = None,
-    padding_factor: float = 0.3,
-    clip: bool = False,
-    upsample: float = 1.0,
-    sharpen: bool = False,
-    sharpen_radius: float = 1.0,
-    sharpen_amount: float = 1.2,
-    smooth_radius: float = 0.0,
-) -> Path:
+def _collect_overlays(
+    overlays: Optional[Iterable[Path]],
+    padding_factor: float,
+    clip: bool,
+) -> Tuple[List[Dict[str, Any]], Optional[Tuple[float, float, float, float]]]:
+    overlay_geojsons: List[Dict[str, Any]] = []
+    clip_bounds: Optional[Tuple[float, float, float, float]] = None
 
-    overlay_geojsons = []
-    clip_bounds = None
     if overlays:
         for geojson_path in overlays:
             overlay_geojsons.append(_load_geojson(geojson_path))
 
-        geom_bounds = [_extract_geometry_bounds(geojson_data) for geojson_data in overlay_geojsons]
-        geom_bounds = [b for b in geom_bounds if b is not None]
+        geom_bounds = [_extract_geometry_bounds(data) for data in overlay_geojsons]
+        geom_bounds = [bounds for bounds in geom_bounds if bounds is not None]
         if geom_bounds:
             min_lon_geo = min(b[0] for b in geom_bounds)
             min_lat_geo = min(b[1] for b in geom_bounds)
@@ -250,51 +271,108 @@ def build_map(
                     max_lat_geo + pad_lat,
                 )
 
-    data, transform, bounds = _load_raster(index_path, clip_bounds_wgs84=clip_bounds)
+    return overlay_geojsons, clip_bounds
+
+
+def _prepare_raster_data(
+    index_path: Path,
+    overlay_geojsons: Sequence[Dict[str, Any]],
+    clip_bounds: Optional[Tuple[float, float, float, float]],
+    *,
+    clip: bool,
+    upsample: float,
+    sharpen: bool,
+    sharpen_radius: float,
+    sharpen_amount: float,
+    smooth_radius: float,
+) -> Tuple[np.ndarray, Affine, Tuple[float, float, float, float]]:
+    data, transform, _ = _load_raster(index_path, clip_bounds_wgs84=clip_bounds)
+
     if sharpen:
         data = _apply_unsharp_mask(data, radius=sharpen_radius, amount=sharpen_amount)
 
     if overlay_geojsons and clip:
-        shapes = []
-        for geojson_data in overlay_geojsons:
-            for geom in _iterate_geometries(geojson_data):
-                shapes.append((geom, 1))
-        if shapes:
-            mask = rasterize(
-                shapes=shapes,
-                out_shape=data.shape,
-                transform=transform,
-                fill=0,
-                all_touched=False,
-                dtype=np.uint8,
-            )
-            data = np.where(mask == 1, data, np.nan)
+        data = _apply_overlay_mask(data, transform, overlay_geojsons)
 
     data, transform = _upsample_raster(data, transform, upsample)
     data = _apply_smoothing(data, smooth_radius)
 
     if overlay_geojsons and clip and upsample > 1.0:
-        shapes = []
-        for geojson_data in overlay_geojsons:
-            for geom in _iterate_geometries(geojson_data):
-                shapes.append((geom, 1))
-        if shapes:
-            mask = rasterize(
-                shapes=shapes,
-                out_shape=data.shape,
-                transform=transform,
-                fill=0,
-                all_touched=False,
-                dtype=np.uint8,
-            )
-            data = np.where(mask == 1, data, np.nan)
+        data = _apply_overlay_mask(data, transform, overlay_geojsons)
 
-    image, min_value, max_value = _generate_rgba(data, cmap_name, vmin, vmax, opacity)
+    bounds = array_bounds(data.shape[0], data.shape[1], transform)
+    return data, transform, bounds
 
-    min_lon, min_lat, max_lon, max_lat = bounds
 
-    if clip_bounds is not None:
-        min_lon, min_lat, max_lon, max_lat = clip_bounds
+def prepare_map_data(
+    index_path: Path,
+    overlays: Optional[Iterable[Path]],
+    padding_factor: float,
+    clip: bool,
+    upsample: float,
+    sharpen: bool,
+    sharpen_radius: float,
+    sharpen_amount: float,
+    smooth_radius: float,
+) -> PreparedRaster:
+    overlay_geojsons, clip_bounds = _collect_overlays(overlays, padding_factor, clip)
+    data, transform, bounds = _prepare_raster_data(
+        index_path,
+        overlay_geojsons,
+        clip_bounds,
+        clip=clip,
+        upsample=upsample,
+        sharpen=sharpen,
+        sharpen_radius=sharpen_radius,
+        sharpen_amount=sharpen_amount,
+        smooth_radius=smooth_radius,
+    )
+    return PreparedRaster(
+        data=data,
+        transform=transform,
+        bounds=bounds,
+        clip_bounds=clip_bounds,
+        overlay_geojsons=list(overlay_geojsons),
+        index_name=index_path.stem,
+    )
+
+
+def export_csv(prepared: PreparedRaster, output_path: Path) -> Path:
+    data = prepared.data
+    transform = prepared.transform
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["longitude", "latitude", "value"])
+        for row_idx in range(data.shape[0]):
+            row = data[row_idx]
+            valid = np.isfinite(row)
+            if not np.any(valid):
+                continue
+            cols = np.nonzero(valid)[0]
+            rows_iter = [row_idx] * len(cols)
+            lons, lats = xy(transform, rows_iter, cols.tolist(), offset="center")
+            for lon, lat, col_idx in zip(lons, lats, cols):
+                writer.writerow([lon, lat, float(row[col_idx])])
+    return output_path
+
+
+def build_map(
+    prepared: PreparedRaster,
+    output_path: Path,
+    cmap_name: str = DEFAULT_CMAP,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    opacity: float = 0.75,
+    tiles: str = "CartoDB positron",
+    tile_attr: Optional[str] = None,
+) -> Path:
+    image, min_value, max_value = _generate_rgba(prepared.data, cmap_name, vmin, vmax, opacity)
+
+    min_lon, min_lat, max_lon, max_lat = prepared.bounds
+    if prepared.clip_bounds is not None:
+        min_lon, min_lat, max_lon, max_lat = prepared.clip_bounds
 
     centre_lat = (min_lat + max_lat) / 2
     centre_lon = (min_lon + max_lon) / 2
@@ -314,7 +392,7 @@ def build_map(
         image=image,
         bounds=[[min_lat, min_lon], [max_lat, max_lon]],
         opacity=1.0,
-        name=index_path.stem,
+        name=prepared.index_name,
     ).add_to(base_map)
 
     linear = LinearColormap(
@@ -322,10 +400,10 @@ def build_map(
         vmin=min_value,
         vmax=max_value,
     )
-    linear.caption = f"{index_path.stem} (min={min_value:.3f}, max={max_value:.3f})"
+    linear.caption = f"{prepared.index_name} (min={min_value:.3f}, max={max_value:.3f})"
     linear.add_to(base_map)
 
-    for geojson_data in overlay_geojsons:
+    for geojson_data in prepared.overlay_geojsons:
         _add_geojson_layer(base_map, geojson_data)
 
     folium.LayerControl().add_to(base_map)
@@ -365,21 +443,19 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--upsample", type=float, default=1.0, help="Fator de upsample para suavizar pixels (ex.: 4).")
     parser.add_argument("--smooth-radius", type=float, default=0.0, help="Aplica suavização gaussiana apos o upsample.")
     parser.add_argument("--clip", action="store_true", help="Recorta o raster ao(s) poligono(s) do(s) GeoJSON(s).")
+    parser.add_argument("--csv-output", type=Path, help="Salva os pixels (lon, lat, valor) em um arquivo CSV.")
+    parser.add_argument("--no-html", action="store_true", help="Nao gera o HTML; apenas exporta os dados.")
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
     args = parse_args(argv)
-    output = build_map(
-        index_path=args.index.expanduser().resolve(),
-        output_path=args.output.expanduser().resolve(),
-        cmap_name=args.colormap,
-        vmin=args.vmin,
-        vmax=args.vmax,
-        opacity=args.opacity,
-        overlays=[path.expanduser().resolve() for path in (args.geojson or [])],
-        tiles=args.tiles,
-        tile_attr=args.tile_attr,
+    index_path = args.index.expanduser().resolve()
+    overlay_paths = [path.expanduser().resolve() for path in (args.geojson or [])]
+
+    prepared = prepare_map_data(
+        index_path=index_path,
+        overlays=overlay_paths,
         padding_factor=args.padding,
         clip=args.clip,
         upsample=args.upsample,
@@ -388,7 +464,26 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         sharpen_amount=args.sharpen_amount,
         smooth_radius=args.smooth_radius,
     )
-    print(f"Mapa salvo em {output}")
+
+    if args.csv_output:
+        csv_output = args.csv_output.expanduser().resolve()
+        export_csv(prepared, csv_output)
+        print(f"CSV salvo em {csv_output}")
+
+    if not args.no_html:
+        output = build_map(
+            prepared=prepared,
+            output_path=args.output.expanduser().resolve(),
+            cmap_name=args.colormap,
+            vmin=args.vmin,
+            vmax=args.vmax,
+            opacity=args.opacity,
+            tiles=args.tiles,
+            tile_attr=args.tile_attr,
+        )
+        print(f"Mapa salvo em {output}")
+    elif not args.csv_output:
+        print("Nenhuma saida foi gerada. Use --csv-output ou remova --no-html.")
 
 
 if __name__ == "__main__":
