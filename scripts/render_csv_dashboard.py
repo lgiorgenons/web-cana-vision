@@ -28,7 +28,7 @@ from render_index_map import (  # type: ignore
     _upsample_raster,
     build_map,
 )
-from render_csv_map import _load_csv_grid, _build_grid  # type: ignore
+from render_csv_map import _load_csv_grid, _build_grid, _expand_to_clip_bounds  # type: ignore
 
 
 def _prepare_raster_from_array(
@@ -68,6 +68,8 @@ def _prepare_from_csv(
         data = _apply_unsharp_mask(data, radius=sharpen_radius, amount=sharpen_amount)
     if overlay_geojsons and clip:
         data = _apply_overlay_mask(data, transform, overlay_geojsons)
+    if clip and clip_bounds is not None:
+        data, transform = _expand_to_clip_bounds(data, transform, clip_bounds)
     data, transform = _upsample_raster(data, transform, upsample)
     data = _apply_smoothing(data, smooth_radius)
     if overlay_geojsons and clip and upsample > 1.0:

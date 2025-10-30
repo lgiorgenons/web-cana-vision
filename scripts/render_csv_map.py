@@ -77,6 +77,42 @@ def _build_grid(lons: np.ndarray, lats: np.ndarray, values: np.ndarray) -> Tuple
     return grid, transform
 
 
+def _expand_to_clip_bounds(
+    data: np.ndarray,
+    transform: Affine,
+    clip_bounds: Tuple[float, float, float, float],
+) -> Tuple[np.ndarray, Affine]:
+    lon_res = float(transform.a)
+    lat_res = float(-transform.e)
+    if lon_res <= 0 or lat_res <= 0:
+        raise ValueError("Transformo inadequado encontrado ao reconstruir a grade do CSV.")
+
+    current_bounds = array_bounds(data.shape[0], data.shape[1], transform)
+
+    def _pad_count(delta: float, resolution: float) -> int:
+        pixels = delta / resolution
+        if pixels <= 0:
+            return 0
+        return int(round(pixels))
+
+    left_pad = _pad_count(current_bounds[0] - clip_bounds[0], lon_res)
+    right_pad = _pad_count(clip_bounds[2] - current_bounds[2], lon_res)
+    top_pad = _pad_count(clip_bounds[3] - current_bounds[3], lat_res)
+    bottom_pad = _pad_count(current_bounds[1] - clip_bounds[1], lat_res)
+
+    if any(value != 0 for value in (left_pad, right_pad, top_pad, bottom_pad)):
+        padded_height = top_pad + data.shape[0] + bottom_pad
+        padded_width = left_pad + data.shape[1] + right_pad
+        padded = np.full((padded_height, padded_width), np.nan, dtype=data.dtype)
+        padded[top_pad : top_pad + data.shape[0], left_pad : left_pad + data.shape[1]] = data
+        data = padded
+        lon_origin = clip_bounds[0] - lon_res / 2.0
+        lat_origin = clip_bounds[3] + lat_res / 2.0
+        transform = Affine.translation(lon_origin, lat_origin) * Affine.scale(lon_res, -lat_res)
+
+    return data, transform
+
+
 def _prepare_from_csv(
     csv_path: Path,
     overlay_paths: Iterable[Path],
@@ -100,6 +136,9 @@ def _prepare_from_csv(
 
     if overlay_geojsons and clip:
         data = _apply_overlay_mask(data, transform, overlay_geojsons)
+
+    if clip and clip_bounds is not None:
+        data, transform = _expand_to_clip_bounds(data, transform, clip_bounds)
 
     data, transform = _upsample_raster(data, transform, upsample)
     data = _apply_smoothing(data, smooth_radius)

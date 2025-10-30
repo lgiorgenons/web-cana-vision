@@ -20,7 +20,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from render_csv_map import _load_csv_grid, _build_grid  # type: ignore  # noqa: E402
+from render_csv_map import _load_csv_grid, _build_grid, _expand_to_clip_bounds  # type: ignore  # noqa: E402
 from render_index_map import (  # type: ignore  # noqa: E402
     _apply_overlay_mask,
     _apply_smoothing,
@@ -87,6 +87,9 @@ def _prepare_overlay(
 
     if clip and overlay_geojsons:
         data = _apply_overlay_mask(data, transform, overlay_geojsons)
+
+    if clip and clip_bounds is not None:
+        data, transform = _expand_to_clip_bounds(data, transform, clip_bounds)
 
     data, transform = _upsample_raster(data, transform, upsample, nodata=np.nan)
     data = _apply_smoothing(data, smooth_radius)
