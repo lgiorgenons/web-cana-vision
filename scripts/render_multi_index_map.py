@@ -266,7 +266,7 @@ def build_multi_map(
         return np.where(mask == 1, data, np.nan)
 
     # Adiciona camadas para cada índice
-    for idx_path in index_paths:
+    for position, idx_path in enumerate(index_paths):
         data, transform, bounds = _load_raster(idx_path, clip_bounds_wgs84=clip_bounds)
         if sharpen:
             data = _apply_unsharp_mask(data, sharpen_radius, sharpen_amount)
@@ -284,12 +284,13 @@ def build_multi_map(
         if clip_bounds is not None:
             o_min_lon, o_min_lat, o_max_lon, o_max_lat = clip_bounds
 
+        feature = folium.FeatureGroup(name=f"{Path(idx_path).stem} ({min_value:.2f}..{max_value:.2f})", show=(position == 0))
         folium.raster_layers.ImageOverlay(
             image=image,
             bounds=[[o_min_lat, o_min_lon], [o_max_lat, o_max_lon]],
             opacity=1.0,
-            name=f"{Path(idx_path).stem} ({min_value:.2f}..{max_value:.2f})",
-        ).add_to(base_map)
+        ).add_to(feature)
+        feature.add_to(base_map)
 
     # Sobrepor o(s) polígono(s)
     for geojson_data in overlay_geojsons:

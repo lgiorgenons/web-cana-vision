@@ -215,6 +215,17 @@ Para alternar entre uso offline e um basemap de alta resolução (Esri World Ima
      --geojson dados/map.geojson \
      --clip \
      --output mapas/dashboard_indices.html
+
+   # True color fixa com sobreposicao alternavel dos indices
+   python scripts/render_truecolor_overlay_map.py \
+     --csv-dir tabelas \
+     --truecolor-red data/processed/<produto>/red.tif \
+     --truecolor-green data/processed/<produto>/green.tif \
+     --truecolor-blue data/processed/<produto>/blue.tif \
+     --geojson dados/map.geojson \
+     --clip \
+     --indices ndvi ndmi \
+     --output mapas/overlay_indices.html
    ```
 
 ## Estrutura sugerida
