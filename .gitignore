@@ -13,3 +13,4 @@ ENV/
 /data
 /mapas
 /tabelas
+/web/node_modules
