@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Bug, Droplet, Wind, CheckCircle, Search, Calendar } from "lucide-react";
+import { AlertCircle, Bug, Droplet, Wind, CheckCircle, Search, Calendar, Play } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type CompareMapResponse = { url: string };
 type ProductsResponse = { products: string[] };
 type IndicesResponse = { product: string; indices: Record<string, string> };
+
+type JobStatusValue = "pending" | "running" | "succeeded" | "failed";
+
+type JobResponse = {
+  job_id: string;
+  status: JobStatusValue;
+  logs: string[];
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  return_code: number | null;
+};
 
 type AlertSeverity = "ALTA" | "MÉDIA" | "BAIXA" | "RESOLVIDO";
 type AlertStatus = "active" | "resolved";
@@ -33,6 +47,13 @@ const alerts: AlertItem[] = [
   { id: 4, type: "Praga", icon: CheckCircle, talhao: "Talhão A-01", severity: "RESOLVIDO", severityColor: "bg-alert-resolved", date: "10/07/2024", status: "resolved" },
 ];
 
+const JOB_STATUS_LABELS: Record<JobStatusValue, string> = {
+  pending: "Na fila",
+  running: "Em execução",
+  succeeded: "Concluído",
+  failed: "Falhou",
+};
+
 const Analises = () => {
   const [mapUrl, setMapUrl] = useState<string>("");
   const [mapError, setMapError] = useState<string>("");
@@ -51,9 +72,22 @@ const Analises = () => {
 
   const [isLoadingMap, setIsLoadingMap] = useState(false);
 
-  const loadMap = async (product: string | null) => {
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<JobStatusValue | null>(null);
+  const [jobLogs, setJobLogs] = useState<string[]>([]);
+  const [jobError, setJobError] = useState<string>("");
+  const [isTriggeringJob, setIsTriggeringJob] = useState(false);
+
+  const hasProducts = products.length > 0;
+  const jobStatusLabel = jobStatus ? JOB_STATUS_LABELS[jobStatus] : "Pronto para executar";
+  const jobIsActive = jobStatus === "pending" || jobStatus === "running";
+
+  const loadMap = useCallback(async (product: string | null) => {
     setMapError("");
     setMapUrl("");
+    if (!hasProducts) {
+      return;
+    }
     setIsLoadingMap(true);
     const query = product ? `?product=${encodeURIComponent(product)}` : "";
     try {
@@ -66,9 +100,9 @@ const Analises = () => {
     } finally {
       setIsLoadingMap(false);
     }
-  };
+  }, [hasProducts]);
 
-  const loadIndices = async (product: string | null) => {
+  const loadIndices = useCallback(async (product: string | null) => {
     setIndicesError("");
     setIsLoadingIndices(true);
     const query = product ? `?product=${encodeURIComponent(product)}` : "";
@@ -84,9 +118,9 @@ const Analises = () => {
     } finally {
       setIsLoadingIndices(false);
     }
-  };
+  }, []);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setProductsError("");
     setIsLoadingProducts(true);
     try {
@@ -105,38 +139,68 @@ const Analises = () => {
         setMapUrl("");
         setIndices([]);
         setIndicesError("");
-        setMapError("");
       }
     } catch (err) {
       setProducts([]);
       setSelectedProduct(null);
       setMapUrl("");
       setIndices([]);
-      setMapError("");
       setIndicesError("");
       setProductsError("Não foi possível carregar a lista de produtos.");
     } finally {
       setIsLoadingProducts(false);
     }
-  };
+  }, []);
+
+  const fetchJobStatus = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/jobs/${id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as JobResponse;
+      setJobStatus(data.status);
+      setJobLogs(data.logs ?? []);
+      setJobError(data.error ?? "");
+    } catch (err) {
+      setJobError("Não foi possível consultar o status da geração.");
+    }
+  }, []);
 
   useEffect(() => {
     void loadProducts();
-  }, []);
+  }, [loadProducts]);
 
   useEffect(() => {
     if (isLoadingProducts) {
       return;
     }
-    if (products.length === 0) {
+    if (!hasProducts) {
       return;
     }
     const target = selectedProduct && products.includes(selectedProduct) ? selectedProduct : null;
     void loadMap(target);
     void loadIndices(target);
-  }, [selectedProduct, products, isLoadingProducts]);
+  }, [isLoadingProducts, hasProducts, products, selectedProduct, loadMap, loadIndices]);
+
+  useEffect(() => {
+    if (!jobId || !jobIsActive) {
+      return;
+    }
+    const interval = setInterval(() => {
+      void fetchJobStatus(jobId);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [jobId, jobIsActive, fetchJobStatus]);
+
+  useEffect(() => {
+    if (jobStatus === "succeeded") {
+      void loadProducts();
+    }
+  }, [jobStatus, loadProducts]);
 
   const applyFilters = () => {
+    if (!hasProducts) {
+      return;
+    }
     const target = selectedProduct && products.includes(selectedProduct) ? selectedProduct : null;
     void loadMap(target);
     void loadIndices(target);
@@ -146,27 +210,74 @@ const Analises = () => {
     setSearch("");
     setStartDate("");
     setEndDate("");
-    const target = selectedProduct && products.includes(selectedProduct) ? selectedProduct : null;
-    void loadMap(target);
-    void loadIndices(target);
+    applyFilters();
+  };
+
+  const defaultDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const handleTriggerWorkflow = async () => {
+    setJobError("");
+    setIsTriggeringJob(true);
+
+    const payload: Record<string, unknown> = {};
+    if (startDate && endDate) {
+      const range = [startDate, endDate].sort();
+      payload.date_range = range;
+    } else if (startDate) {
+      payload.date = startDate;
+    } else if (endDate) {
+      payload.date = endDate;
+    } else {
+      payload.date = defaultDate;
+    }
+    payload.geojson = "dados/map.geojson";
+    payload.cloud = [0, 30];
+    payload.log_level = "INFO";
+
+    try {
+      const res = await fetch("/api/jobs/run-workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = (await res.json()) as { detail?: string };
+          if (body?.detail) {
+            detail = body.detail;
+          }
+        } catch (error) {
+          console.warn("Não foi possível interpretar resposta de erro do workflow", error);
+        }
+        throw new Error(detail);
+      }
+      const data = (await res.json()) as { job_id: string; status: JobStatusValue };
+      setJobId(data.job_id);
+      setJobStatus(data.status);
+      setJobLogs([]);
+      void fetchJobStatus(data.job_id);
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : "Não foi possível iniciar a geração da análise.";
+      setJobError(message);
+    } finally {
+      setIsTriggeringJob(false);
+    }
   };
 
   const totalAtivos = alerts.filter((a) => a.status === "active").length;
   const areaAfetadaHa = 15; // TODO: substituir por valor vindo da API
   const riscoMedioLabel = "Alto"; // TODO: calcular a partir de dados reais
 
-  const hasProducts = products.length > 0;
-
   return (
     <Layout>
       <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Análises</h1>
             <p className="text-muted-foreground">Mapa interativo com alternância de índices</p>
           </div>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Select
               value={selectedProduct ?? "latest"}
               onValueChange={(value) => {
@@ -186,14 +297,23 @@ const Analises = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="secondary" onClick={() => void loadProducts()} disabled={isLoadingProducts}>
-              {isLoadingProducts ? "Recarregando..." : "Recarregar"}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => void loadProducts()} disabled={isLoadingProducts}>
+                {isLoadingProducts ? "Atualizando..." : "Recarregar"}
+              </Button>
+              <Button
+                onClick={handleTriggerWorkflow}
+                disabled={isTriggeringJob || jobIsActive}
+                className="gap-2"
+              >
+                <Play className="h-4 w-4" />
+                {isTriggeringJob ? "Enviando..." : "Gerar análise"}
+              </Button>
+            </div>
           </div>
         </div>
         {productsError && <p className="text-sm text-red-500">{productsError}</p>}
 
-        {/* KPI Cards */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="bg-card-dark border-border">
             <CardHeader className="pb-3">
@@ -223,7 +343,6 @@ const Analises = () => {
           </Card>
         </div>
 
-        {/* Filtros: busca e data */}
         <Card className="bg-card-dark border-border">
           <CardContent className="pt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-end">
@@ -263,7 +382,6 @@ const Analises = () => {
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Mapa (2 colunas) */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="bg-card-dark border-border">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -314,9 +432,50 @@ const Analises = () => {
                 )}
               </CardContent>
             </Card>
+
+            <Card className="bg-card-dark border-border">
+              <CardHeader>
+                <CardTitle>Geração automatizada</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge className={
+                    jobStatus === "failed"
+                      ? "bg-destructive text-destructive-foreground"
+                      : jobStatus === "succeeded"
+                      ? "bg-alert-resolved text-white"
+                      : jobIsActive
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground"
+                  }>
+                    {jobStatusLabel}
+                  </Badge>
+                </div>
+                {jobError && <div className="text-sm text-red-500">{jobError}</div>}
+                {jobId && (
+                  <>
+                    <p className="text-xs text-muted-foreground">Job ID: {jobId}</p>
+                    <div className="max-h-48 overflow-auto rounded-md border border-border bg-background/40 p-3">
+                      {jobLogs.length > 0 ? (
+                        <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                          {jobLogs.join("\n")}
+                        </pre>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Aguardando registros…</p>
+                      )}
+                    </div>
+                  </>
+                )}
+                {!jobId && (
+                  <p className="text-xs text-muted-foreground">
+                    Inicie uma nova geração para baixar a cena mais recente e atualizar os mapas.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Alertas (coluna direita) */}
           <div>
             <Card className="bg-card-dark border-border">
               <CardHeader className="flex flex-row items-center justify-between">
