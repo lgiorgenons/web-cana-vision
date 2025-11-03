@@ -1,4 +1,4 @@
-﻿"""Tools for downloading and analysing satellite imagery to monitor Sugarcane Wilt Syndrome.
+"""Tools for downloading and analysing satellite imagery to monitor Sugarcane Wilt Syndrome.
 
 This module provides a small command line utility to:
 
@@ -655,4 +655,3 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
 
 if __name__ == "__main__":
     main()
-

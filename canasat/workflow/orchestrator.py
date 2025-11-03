@@ -5,16 +5,16 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from canasat.datasources.copernicus import CopernicusClient, CopernicusConfig
 from canasat.config.settings import AppConfig
+from canasat.datasources.copernicus import CopernicusClient, CopernicusConfig
+from canasat.rendering import MultiIndexMapOptions, MultiIndexMapRenderer
 
-# Reuso das funções e renderizadores legados
+# Reuso das funções legadas enquanto migramos processamento
 from scripts.satellite_pipeline import (  # type: ignore
     AreaOfInterest,
     extract_bands_from_safe,
     analyse_scene,
 )
-from scripts.render_multi_index_map import build_multi_map  # type: ignore
 
 
 @dataclass
@@ -87,18 +87,22 @@ class WorkflowService:
         self.cfg.MAPAS_DIR.mkdir(parents=True, exist_ok=True)
         overlays = [aoi_geojson]
         compare_all = self.cfg.MAPAS_DIR / "compare_indices_all.html"
-        build_multi_map(
+        renderer = MultiIndexMapRenderer(
+            MultiIndexMapOptions(
+                tiles=tiles,
+                padding_factor=padding,
+                clip=True,
+                upsample=upsample,
+                smooth_radius=smooth_radius,
+                sharpen=sharpen,
+                sharpen_radius=sharpen_radius,
+                sharpen_amount=sharpen_amount,
+            )
+        )
+        renderer.render(
             index_paths=[p for _, p in sorted(outputs.items())],
             output_path=compare_all,
             overlays=overlays,
-            tiles=tiles,
-            padding_factor=padding,
-            clip=True,
-            upsample=upsample,
-            smooth_radius=smooth_radius,
-            sharpen=sharpen,
-            sharpen_radius=sharpen_radius,
-            sharpen_amount=sharpen_amount,
         )
 
         return WorkflowResult(
@@ -107,4 +111,3 @@ class WorkflowService:
             indices=outputs,
             maps=[compare_all],
         )
-

@@ -6,18 +6,10 @@ CSV por indice para facilitar integracoes posteriores.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from render_index_map import (  # type: ignore  # noqa: E402
-    prepare_map_data,
-    export_csv,
-)
+from canasat.rendering import IndexMapOptions, IndexMapRenderer
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -78,10 +70,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     if not tif_files:
         raise SystemExit(f"Nenhum GeoTIFF encontrado em {indices_dir}")
 
-    for tif_path in tif_files:
-        prepared = prepare_map_data(
-            index_path=tif_path,
-            overlays=overlay_paths,
+    renderer = IndexMapRenderer(
+        IndexMapOptions(
             padding_factor=args.padding,
             clip=args.clip,
             upsample=args.upsample,
@@ -90,8 +80,13 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             sharpen_amount=args.sharpen_amount,
             smooth_radius=args.smooth_radius,
         )
+    )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for tif_path in tif_files:
+        prepared = renderer.prepare(index_path=tif_path, overlays=overlay_paths)
         csv_path = output_dir / f"{tif_path.stem}.csv"
-        export_csv(prepared, csv_path)
+        renderer.export_csv(prepared, csv_path)
         print(f"{tif_path.stem}: CSV salvo em {csv_path}")
 
 

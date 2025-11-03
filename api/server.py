@@ -33,7 +33,13 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from render_multi_index_map import build_multi_map  # type: ignore  # noqa: E402
+try:  # pragma: no cover - prefer core renderer
+    from canasat.rendering import MultiIndexMapOptions, MultiIndexMapRenderer, build_multi_map  # type: ignore
+    _HAS_CANASAT_RENDERER = True
+except Exception:  # pragma: no cover - fallback during migration
+    from render_multi_index_map import build_multi_map  # type: ignore  # noqa: E402
+    _HAS_CANASAT_RENDERER = False
+
 from satellite_pipeline import (  # type: ignore  # noqa: E402
     AreaOfInterest,
     authenticate_from_env,
@@ -156,17 +162,30 @@ def _ensure_compare_map(product: str) -> str:
         if default_geojson.exists():
             overlays.append(default_geojson)
         try:
-            build_multi_map(
-                index_paths=index_paths,
-                output_path=compare_path,
-                overlays=overlays,
-                clip=True,
-                upsample=12,
-                smooth_radius=1.0,
-                sharpen=True,
-                sharpen_radius=1.2,
-                sharpen_amount=1.5,
-            )
+            if _HAS_CANASAT_RENDERER:
+                renderer = MultiIndexMapRenderer(
+                    MultiIndexMapOptions(
+                        clip=True,
+                        upsample=12,
+                        smooth_radius=1.0,
+                        sharpen=True,
+                        sharpen_radius=1.2,
+                        sharpen_amount=1.5,
+                    )
+                )
+                renderer.render(index_paths=index_paths, output_path=compare_path, overlays=overlays)
+            else:
+                build_multi_map(
+                    index_paths=index_paths,
+                    output_path=compare_path,
+                    overlays=overlays,
+                    clip=True,
+                    upsample=12,
+                    smooth_radius=1.0,
+                    sharpen=True,
+                    sharpen_radius=1.2,
+                    sharpen_amount=1.5,
+                )
         except Exception as exc:  # pragma: no cover - defensive
             raise HTTPException(status_code=500, detail=f"Falha ao gerar mapa de comparação: {exc}") from exc
 
@@ -699,4 +718,3 @@ def job_status(job_id: str) -> Dict[str, Any]:
         if not job:
             raise HTTPException(status_code=404, detail="Job não encontrado.")
         return _serialise_job(job)
-

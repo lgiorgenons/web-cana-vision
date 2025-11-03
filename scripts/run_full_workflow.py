@@ -42,8 +42,11 @@ from render_index_map import (
     export_csv,
     prepare_map_data,
 )
-from render_multi_index_map import build_multi_map
-from render_truecolor_map import build_truecolor_map
+try:
+    from canasat.rendering import build_multi_map, build_truecolor_map  # type: ignore
+except Exception:  # pragma: no cover - fallback durante migração
+    from render_multi_index_map import build_multi_map  # type: ignore
+    from render_truecolor_map import build_truecolor_map  # type: ignore
 from render_csv_map import (
     _prepare_from_csv,
     build_map as build_csv_map,

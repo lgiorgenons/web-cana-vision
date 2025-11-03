@@ -198,6 +198,7 @@ Passe `--generate-overlay` se quiser incluir `mapas/overlay_indices.html` (arqui
 ## Estrutura do projeto
 ```
 api/                 # Backend FastAPI (serve mapas/CSV e metadados)
+canasat/             # Core reutilizável (datasources, processamento, renderização)
 dados/               # AOIs (GeoJSON) e insumos da análise
 data/
 - raw/               # Produtos SAFE baixados (ignorado no git)
@@ -210,6 +211,15 @@ web/                 # Aplicação web (Vite + React + Tailwind)
 As bandas salvas incluem `blue`, `green`, `red`, `rededge1-4`, `nir`, `swir1` e `swir2`,
 permitindo calcular índices baseados nas bandas red‑edge e SWIR do Sentinel‑2.
 ```
+
+### Core modular (canasat/)
+O diretório `canasat/` concentra as camadas reutilizáveis da aplicação:
+- `config` expõe `AppConfig`, centralizando credenciais e paths.
+- `datasources` já oferece `CopernicusClient` (OAuth2 + OData).
+- `rendering` abriga `IndexMapRenderer`, `CSVMapRenderer`, `TrueColorRenderer` e `TrueColorOverlayRenderer` (todas OO), alem de utilitarios de GeoJSON/raster/CSV para servir API, CLI e futuros workers sem duplicacao.
+- `workflow` fornece `WorkflowService`, que orquestra download → processamento → mapas consumindo o core.
+
+Os scripts em `scripts/` agora funcionam como *wrappers* finos chamando essas classes/funções, facilitando a evolução do backend/API independentes.
 
 ## Aplicação Web
 
@@ -249,4 +259,3 @@ Se o mapa não carregar, gere os artefatos via workflow automatizado (seção an
 - Enriquecer os indicadores com novos índices (SIPI, NDVIre, MCARI2) e estatísticas de anomalia por talhão.
 - Integrar sensores adicionais (Landsat/ECOSTRESS para temperatura, SMAP/CHIRPS para umidade/chuva, Sentinel‑1 para estrutural) e combinar com o Sentinel‑2.
 - Definir governança de armazenamento (rotina de limpeza dos SAFEs ou upload para bucket dedicado) e entrega de relatórios/alertas agronômicos automaticamente.
-

@@ -72,8 +72,8 @@ Legenda: [ ] pendente · [x] concluído · [~] em andamento
   - [ ] Extensões planejadas: SIPI, NDVIre, MCARI2 (já citadas nas pendências).
 
 - Fase 4 — Renderização
-  - [ ] `IndexMapRenderer`, `MultiIndexMapRenderer`, `TrueColorRenderer`, `OverlayRenderer`: portar funções dos scripts mantendo paridade de parâmetros.
-  - [ ] Unificar parâmetros comuns (tiles, clip, sharpen, vmin/vmax, upsample, smooth) em tipos/regras centrais.
+  - [~] `IndexMapRenderer`, `CSVMapRenderer`, `MultiIndexMapRenderer`, `TrueColorRenderer`, `OverlayRenderer`: mapas single-index, CSV, true color e overlay ja migraram para classes (`canasat.rendering`). Restam renderizadores auxiliares (comparacoes especificas, galerias).
+  - [~] Unificar parâmetros comuns (tiles, clip, sharpen, vmin/vmax, upsample, smooth) em tipos/regras centrais — `IndexMapOptions`/`MultiIndexMapOptions` criados; falta aplicar aos demais mapas.
 
 - Fase 5 — Exportação
   - [ ] `CSVExporter`: exportação padronizada a partir de `PreparedRaster`/grades.
@@ -129,14 +129,15 @@ Legenda: [ ] pendente · [x] concluído · [~] em andamento
 - Tipos/documentação atualizados.
 
 ## Próximos passos imediatos
-1) Confirmar nome do pacote raiz (sugestão: `cana`).
-2) Criar estrutura vazia dos módulos e mover o mínimo necessário (iniciar por `CopernicusClient`).
-3) Adaptar `run_full_workflow.py` para usar `WorkflowService` (mantendo a CLI).
+1) Migrar os renderizadores restantes (gallery/comparison) para `canasat.rendering`, mantendo wrappers compatíveis.
+2) Iniciar a migração da camada de processamento criando `SafeExtractor` e `IndexCalculator` orientados a objetos.
+3) Definir estratégia de testes automatizados (mocks de raster/CSV) e revisar a API para aproveitar os novos serviços.
 
 ---
 
 Progresso atual:
 - [x] Documento de plano criado.
-- [ ] Estrutura inicial de pacotes criada.
-- [ ] Primeiro serviço migrado (CopernicusClient).
-- [ ] Wrapper CLI apontando para serviços.
+- [x] Estrutura inicial de pacotes criada (`canasat/`).
+- [x] Primeiro serviço migrado (CopernicusClient + WorkflowService).
+- [x] Wrapper CLI apontando para serviços (scripts principais delegam ao core).
+- [~] Renderização migrada — `IndexMapRenderer` e `MultiIndexMapRenderer` já estão orientados a objetos; faltam os demais renderizadores.
