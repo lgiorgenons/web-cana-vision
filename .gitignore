@@ -10,3 +10,18 @@ ENV/
 .idea/
 .vscode/
 .DS_Store
+/data
+/mapas
+/tabelas
+# API/runtime
+api/__pycache__/
+api/*.py[cod]
+
+# Frontend (npm)
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/*.local
+web/.env*
+web/bun.lockb
+/workspace

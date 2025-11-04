@@ -4,3 +4,5 @@ requests
 folium
 matplotlib
 scipy
+fastapi
+uvicorn[standard]
