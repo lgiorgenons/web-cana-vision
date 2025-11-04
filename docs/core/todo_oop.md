@@ -64,15 +64,15 @@ Legenda: [ ] pendente · [x] concluído · [~] em andamento
   - [x] Injetar `CopernicusClient` em `WorkflowService` inicial.
 
 - Fase 2 — Extração de bandas
-  - [ ] `SafeExtractor`: padronizar leitura e reprojeção; API clara: `extract_bands(product_path) -> Dict[str, Path]`.
+  - [x] `SafeExtractor`: padronizar leitura e reprojecao; API clara: `extract_bands(product_path) -> Dict[str, Path]`.
   - [ ] `FSCache`: reaproveitar reprojeções/arquivos.
 
 - Fase 3 — Cálculo de índices
-  - [ ] `IndexCalculator`: interface por índice (Strategy); portar lógica atual (NDVI, NDWI, MSI, EVI, NDRE, NDMI, NDRE1-4, CI_REDEDGE, SIPI).
+  - [x] `IndexCalculator`: interface por indice (Strategy); portar logica atual (NDVI, NDWI, MSI, EVI, NDRE, NDMI, NDRE1-4, CI_REDEDGE, SIPI).
   - [ ] Extensões planejadas: SIPI, NDVIre, MCARI2 (já citadas nas pendências).
 
 - Fase 4 — Renderização
-  - [~] `IndexMapRenderer`, `CSVMapRenderer`, `MultiIndexMapRenderer`, `TrueColorRenderer`, `OverlayRenderer`: mapas single-index, CSV, true color e overlay ja migraram para classes (`canasat.rendering`). Restam renderizadores auxiliares (comparacoes especificas, galerias).
+  - [~] `IndexMapRenderer`, `CSVMapRenderer`, `MultiIndexMapRenderer`, `TrueColorRenderer`, `OverlayRenderer`, `BandGalleryRenderer`, `ComparisonMapRenderer`, `CSVDashboardRenderer`: principais visualizacoes migradas; restam apenas casos especificos do frontend (se houver).
   - [~] Unificar parâmetros comuns (tiles, clip, sharpen, vmin/vmax, upsample, smooth) em tipos/regras centrais — `IndexMapOptions`/`MultiIndexMapOptions` criados; falta aplicar aos demais mapas.
 
 - Fase 5 — Exportação
