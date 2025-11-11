@@ -24,8 +24,20 @@ export type RegisterPayload = {
   password: string;
 };
 
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
 export async function registerUser(payload: RegisterPayload) {
   return apiFetch<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function loginUser(payload: LoginPayload) {
+  return apiFetch<AuthResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify(payload),
   });

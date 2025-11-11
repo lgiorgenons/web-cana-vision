@@ -1,6 +1,17 @@
 const rawBase = import.meta.env.VITE_API_URL?.trim() ?? "/api";
 const API_BASE_URL = rawBase.endsWith("/") ? rawBase.slice(0, -1) : rawBase;
 
+export class ApiError extends Error {
+  status: number;
+  body: unknown;
+
+  constructor(message: string, status: number, body: unknown) {
+    super(message);
+    this.status = status;
+    this.body = body;
+  }
+}
+
 type ApiFetchOptions = RequestInit & {
   skipJson?: boolean;
 };
@@ -36,7 +47,7 @@ export async function apiFetch<TResponse>(path: string, options: ApiFetchOptions
 
   if (!response.ok) {
     const message = parsed?.message || parsed?.detail || `Erro ao chamar API (${response.status})`;
-    throw new Error(message);
+    throw new ApiError(message, response.status, parsed);
   }
 
   return parsed as TResponse;

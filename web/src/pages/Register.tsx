@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { ApiError } from "@/lib/api-client";
 import { registerUser } from "@/services/auth";
 
 const heroImage = "/images/img_login.png";
@@ -22,9 +23,9 @@ const registerSchema = z
     email: z.string().email("Informe um e-mail valido."),
     password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres."),
     confirmPassword: z.string().min(8, "Confirme a senha."),
-    acceptTerms: z.literal(true, {
-      errorMap: () => ({ message: "Voce precisa aceitar os termos." }),
-    }),
+    acceptTerms: z
+      .boolean()
+      .refine((value) => value === true, { message: "Voce precisa aceitar os termos." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -60,11 +61,22 @@ const Register = () => {
       });
       navigate("/login");
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
+      let description = "Nao foi possivel criar a conta.";
+
+      if (error instanceof ApiError) {
+        if (error.status === 409) {
+          description = "Este e-mail já está cadastrado.";
+          form.setError("email", { message: description });
+        } else {
+          description = error.message;
+        }
+      }
+
       toast({
         variant: "destructive",
         title: "Nao foi possivel criar a conta",
-        description: error.message,
+        description,
       });
     },
   });
