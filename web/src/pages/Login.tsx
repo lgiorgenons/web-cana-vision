@@ -48,26 +48,61 @@ const Login = () => {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (values: LoginFormValues) => loginUser({ email: values.email, password: values.password }),
+    mutationFn: (values: LoginFormValues) => loginUser({ email: values.email, password: values.password }),
     onSuccess: (data, variables) => {
+      if (!data.tokens) {
+        toast({
+          variant: "destructive",
+          title: "Sessão não disponível",
+          description: "Confirme seu e-mail antes de acessar a plataforma.",
+        });
+        return;
+      }
+
       saveAuthSession(data, variables.remember);
       toast({ title: "Bem-vindo de volta", description: `Olá, ${data.user.nome.split(" ")[0]}!` });
       navigate("/dashboard");
     },
     onError: (error: unknown, variables) => {
-      let description = "Não foi possível fazer login.";
-
       if (error instanceof ApiError) {
+        const body = (typeof error.body === "object" && error.body !== null ? error.body : undefined) as
+          | { code?: string; message?: string }
+          | undefined;
+
+        const messageText = body?.message ?? error.message ?? "";
+        const isPendingConfirmation =
+          body?.code === "email_not_confirmed" || /confirm/i.test(messageText) || /confirm/i.test(error.message ?? "");
+
+        if (isPendingConfirmation) {
+          toast({
+            variant: "destructive",
+            title: "Confirme seu e-mail",
+            description:
+              "Finalize a confirmação enviada para o seu e-mail antes de entrar. Verifique sua caixa de entrada ou solicite um novo link.",
+          });
+          return;
+        }
+
         if (error.status === 401) {
-          description = "E-mail não encontrado ou senha incorreta.";
+          const description = "E-mail não encontrado ou senha incorreta.";
           form.setError("email", { message: "Confira se o e-mail está correto." });
           form.setError("password", { message: "Confira se a senha está correta." });
-        } else {
-          description = error.message;
+          toast({ variant: "destructive", title: "Não foi possível fazer login", description });
+          if (!variables?.password) {
+            form.setFocus("password");
+          }
+          return;
         }
+
+        toast({
+          variant: "destructive",
+          title: "Não foi possível fazer login",
+          description: error.message,
+        });
+        return;
       }
 
-      toast({ variant: "destructive", title: "Não foi possível fazer login", description });
+      toast({ variant: "destructive", title: "Não foi possível fazer login", description: "Tente novamente em instantes." });
 
       if (!variables?.password) {
         form.setFocus("password");
@@ -82,7 +117,7 @@ const Login = () => {
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agr�colas monitorados por sat�lite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agrícolas monitorados por satélite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -173,9 +208,9 @@ const Login = () => {
                           <FormControl>
                             <Checkbox
                               id="remember"
+                              className="border-muted-foreground"
                               checked={field.value}
                               onCheckedChange={(checked) => field.onChange(checked === true)}
-                              className="border-muted-foreground"
                             />
                           </FormControl>
                           <span>Lembrar da conta</span>

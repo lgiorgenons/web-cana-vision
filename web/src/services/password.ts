@@ -6,7 +6,6 @@ export type ForgotPasswordPayload = {
 
 export type ForgotPasswordResponse = {
   message: string;
-  resetToken?: string;
 };
 
 export async function requestPasswordReset(payload: ForgotPasswordPayload) {

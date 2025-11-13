@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -23,10 +22,7 @@ const forgotSchema = z.object({
 
 type ForgotFormValues = z.infer<typeof forgotSchema>;
 
-const canDisplayDevToken = import.meta.env.MODE !== "production" && import.meta.env.VITE_SHOW_RESET_TOKEN !== "false";
-
 const ForgotPassword = () => {
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<ForgotFormValues>({
@@ -37,7 +33,6 @@ const ForgotPassword = () => {
   const mutation = useMutation({
     mutationFn: requestPasswordReset,
     onSuccess: (data) => {
-      setResetToken(data.resetToken ?? null);
       toast({
         title: "Se o e-mail estiver cadastrado",
         description: data.message,
@@ -57,19 +52,10 @@ const ForgotPassword = () => {
     mutation.mutate(values);
   };
 
-  const handleResend = () => {
-    const email = form.getValues("email");
-    if (!email) {
-      toast({ variant: "destructive", title: "Informe o e-mail", description: "Preencha o e-mail para reenviar o link." });
-      return;
-    }
-    mutation.mutate({ email });
-  };
-
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agrícolas monitorados por satélite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agrÃ­colas monitorados por satÃ©lite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -116,7 +102,7 @@ const ForgotPassword = () => {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="Entre com o seu email cadastrado"
+                          placeholder="Entre com o seu e-mail cadastrado"
                           className="h-12 text-base"
                           {...field}
                         />
@@ -136,13 +122,6 @@ const ForgotPassword = () => {
               </form>
             </Form>
 
-            {resetToken && canDisplayDevToken && (
-              <div className="rounded-md bg-muted/40 p-4 text-left text-sm">
-                <p className="font-semibold">Token de teste:</p>
-                <p className="break-all text-muted-foreground">{resetToken}</p>
-              </div>
-            )}
-
             <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-[#181E08]">
               <Link to="/login" className="inline-flex items-center gap-2 font-semibold hover:text-primary">
                 <img src={arrowIcon} alt="Voltar" className="h-6 w-6" />
@@ -150,7 +129,7 @@ const ForgotPassword = () => {
               </Link>
               <button
                 type="button"
-                onClick={handleResend}
+                onClick={() => form.handleSubmit(onSubmit)()}
                 className="text-primary font-semibold hover:underline"
                 disabled={mutation.isPending}
               >

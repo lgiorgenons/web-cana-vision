@@ -11,11 +11,14 @@ export type AuthUser = {
 export type AuthTokens = {
   accessToken: string;
   refreshToken: string;
+  tokenType?: string;
 };
 
 export type AuthResponse = {
   user: AuthUser;
-  tokens: AuthTokens;
+  tokens?: AuthTokens;
+  provider?: string;
+  requiresEmailConfirmation?: boolean;
 };
 
 export type RegisterPayload = {

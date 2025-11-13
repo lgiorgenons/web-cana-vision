@@ -52,13 +52,20 @@ const Register = () => {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (values: RegisterFormValues) =>
+    mutationFn: (values: RegisterFormValues) =>
       registerUser({ nome: values.nome, email: values.email, password: values.password }),
-    onSuccess: () => {
-      toast({
-        title: "Conta criada com sucesso",
-        description: "Faça login com seu e-mail e senha para continuar.",
-      });
+    onSuccess: (data) => {
+      if (data.requiresEmailConfirmation) {
+        toast({
+          title: "Confirme seu e-mail",
+          description: "Enviamos um link de confirmação. Verifique sua caixa de entrada.",
+        });
+      } else {
+        toast({
+          title: "Conta criada com sucesso",
+          description: "Faça login com seu e-mail e senha para continuar.",
+        });
+      }
       navigate("/login");
     },
     onError: (error: unknown) => {
@@ -88,7 +95,7 @@ const Register = () => {
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agr�colas monitorados por sat�lite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agrícolas monitorados por satélite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -118,7 +125,7 @@ const Register = () => {
           <div className="w-full max-w-md space-y-8">
             <div className="space-y-1">
               <h1 className="text-3xl font-semibold text-[#181E08]">
-                Bem vindo ao Atmos
+                Bem-vindo ao Atmos
                 <span className="text-[#34A853]">Agro</span>!
               </h1>
               <p className="text-base text-muted-foreground">Crie sua conta e explore inúmeros benefícios</p>
@@ -229,7 +236,7 @@ const Register = () => {
                         <label htmlFor="terms" className="leading-relaxed">
                           Eu aceito os {" "}
                           <a href="#" className="font-semibold text-primary hover:underline">
-                            termos e condicoes
+                            termos e condições
                           </a>
                         </label>
                       </div>
@@ -255,7 +262,7 @@ const Register = () => {
             </Form>
 
             <p className="text-center text-sm text-[#181E08]">
-              Ja tem uma conta?{" "}
+              Já tem uma conta?{" "}
               <Link to="/login" className="font-semibold text-primary hover:underline">
                 Entre aqui
               </Link>
