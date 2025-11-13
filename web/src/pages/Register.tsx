@@ -20,12 +20,12 @@ const brandLogo = "/images/icon_atmos_agro.svg";
 const registerSchema = z
   .object({
     nome: z.string().min(3, "Informe pelo menos 3 caracteres."),
-    email: z.string().email("Informe um e-mail valido."),
+    email: z.string().email("Informe um e-mail válido."),
     password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres."),
     confirmPassword: z.string().min(8, "Confirme a senha."),
     acceptTerms: z
       .boolean()
-      .refine((value) => value === true, { message: "Voce precisa aceitar os termos." }),
+      .refine((value) => value === true, { message: "Você precisa aceitar os termos." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -57,12 +57,12 @@ const Register = () => {
     onSuccess: () => {
       toast({
         title: "Conta criada com sucesso",
-        description: "Faca login com seu e-mail e senha para continuar.",
+        description: "Faça login com seu e-mail e senha para continuar.",
       });
       navigate("/login");
     },
     onError: (error: unknown) => {
-      let description = "Nao foi possivel criar a conta.";
+      let description = "Não foi possível criar a conta.";
 
       if (error instanceof ApiError) {
         if (error.status === 409) {
@@ -75,7 +75,7 @@ const Register = () => {
 
       toast({
         variant: "destructive",
-        title: "Nao foi possivel criar a conta",
+        title: "Não foi possível criar a conta",
         description,
       });
     },
@@ -88,7 +88,7 @@ const Register = () => {
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agricolas monitorados por satelite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agr�colas monitorados por sat�lite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -98,11 +98,11 @@ const Register = () => {
 
         <div className="absolute bottom-12 left-8 right-10 text-white">
           <h2 className="max-w-xl text-5xl font-semibold leading-[50px]">
-            Monitore a saude da sua cana direto do espaco
+            Monitore a saúde da sua cana direto do espaço
           </h2>
           <p className="mt-6 max-w-xl text-base font-normal text-white/85 leading-[20px]">
-            Imagens de satelite, indices de estresse e alertas inteligentes -- tudo para manter seu canavial produtivo,
-            do plantio a colheita.
+            Imagens de satélite, índices de estresse e alertas inteligentes — tudo para manter seu canavial produtivo,
+            do plantio à colheita.
           </p>
         </div>
       </div>
@@ -121,7 +121,7 @@ const Register = () => {
                 Bem vindo ao Atmos
                 <span className="text-[#34A853]">Agro</span>!
               </h1>
-              <p className="text-base text-muted-foreground">Crie sua conta e explore inumeros beneficios</p>
+              <p className="text-base text-muted-foreground">Crie sua conta e explore inúmeros benefícios</p>
             </div>
 
             <Form {...form}>

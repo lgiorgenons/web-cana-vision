@@ -69,7 +69,7 @@ const ForgotPassword = () => {
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agricolas monitorados por satelite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agr�colas monitorados por sat�lite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -79,11 +79,11 @@ const ForgotPassword = () => {
 
         <div className="absolute bottom-12 left-8 right-10 text-white">
           <h2 className="max-w-xl text-5xl font-semibold leading-[50px]">
-            Monitore a saude da sua cana direto do espaco
+            Monitore a saúde da sua cana direto do espaço
           </h2>
           <p className="mt-6 max-w-xl text-base font-normal text-white/85 leading-[20px]">
-            Imagens de satelite, indices de estresse e alertas inteligentes -- tudo para manter seu canavial produtivo,
-            do plantio a colheita.
+            Imagens de satélite, índices de estresse e alertas inteligentes — tudo para manter seu canavial produtivo,
+            do plantio à colheita.
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@ const ForgotPassword = () => {
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-[#181E08]">Esqueceu sua senha?</h1>
-              <p className="text-base text-muted-foreground">Nao se preocupe, redefina a sua senha seguindo as instruções.</p>
+              <p className="text-base text-muted-foreground">Não se preocupe, redefina a sua senha seguindo as instruções.</p>
             </div>
 
             <Form {...form}>

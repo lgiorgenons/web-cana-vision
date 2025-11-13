@@ -51,11 +51,11 @@ const Login = () => {
     mutationFn: async (values: LoginFormValues) => loginUser({ email: values.email, password: values.password }),
     onSuccess: (data, variables) => {
       saveAuthSession(data, variables.remember);
-      toast({ title: "Bem vindo de volta", description: `Ola, ${data.user.nome.split(" ")[0]}!` });
+      toast({ title: "Bem-vindo de volta", description: `Olá, ${data.user.nome.split(" ")[0]}!` });
       navigate("/dashboard");
     },
     onError: (error: unknown, variables) => {
-      let description = "Nao foi possivel fazer login.";
+      let description = "Não foi possível fazer login.";
 
       if (error instanceof ApiError) {
         if (error.status === 401) {
@@ -67,7 +67,7 @@ const Login = () => {
         }
       }
 
-      toast({ variant: "destructive", title: "Nao foi possivel fazer login", description });
+      toast({ variant: "destructive", title: "Não foi possível fazer login", description });
 
       if (!variables?.password) {
         form.setFocus("password");
@@ -82,7 +82,7 @@ const Login = () => {
   return (
     <div className="grid min-h-screen bg-white lg:h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroImage} alt="Campos agricolas monitorados por satelite" className="h-full w-full object-cover" />
+        <img src={heroImage} alt="Campos agr�colas monitorados por sat�lite" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
         <div className="absolute left-3 top-3 flex items-center gap-0 text-white">
@@ -92,11 +92,11 @@ const Login = () => {
 
         <div className="absolute bottom-12 left-8 right-10 text-white">
           <h2 className="max-w-xl text-5xl font-semibold leading-[50px]">
-            Monitore a saude da sua cana direto do espaco
+            Monitore a saúde da sua cana direto do espaço
           </h2>
           <p className="mt-6 max-w-xl text-base font-normal text-white/85 leading-[20px]">
-            Imagens de satelite, indices de estresse e alertas inteligentes -- tudo para manter seu canavial produtivo,
-            do plantio a colheita.
+            Imagens de satélite, índices de estresse e alertas inteligentes — tudo para manter seu canavial produtivo,
+            do plantio à colheita.
           </p>
         </div>
       </div>
@@ -222,7 +222,7 @@ const Login = () => {
             </div>
 
             <p className="text-center text-sm text-[#181E08]">
-              Nao tem uma conta?{" "}
+              Não tem uma conta?{" "}
               <Link to="/registrar" className="font-semibold text-primary hover:underline">
                 Registre-se
               </Link>
