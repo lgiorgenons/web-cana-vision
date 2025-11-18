@@ -1,14 +1,6 @@
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<foreignObject x="-136.98" y="-136.98" width="297.96" height="297.96"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(68.49px);clip-path:url(#bgblur_0_137_1098_clip_path);height:100%;width:100%"></div></foreignObject><g data-figma-bg-blur-radius="136.98">
-<rect y="24" width="24" height="24" rx="12" transform="rotate(-90 0 24)" fill="#F0F0F0"/>
-<rect x="0.19025" y="23.8097" width="23.6195" height="23.6195" rx="11.8097" transform="rotate(-90 0.19025 23.8097)" stroke="url(#paint0_radial_137_1098)" stroke-opacity="0.48" stroke-width="0.3805" style="mix-blend-mode:lighten"/>
-<path opacity="0.8" fill-rule="evenodd" clip-rule="evenodd" d="M10.0522 12.0009L14.55 7.46527C14.8829 7.12914 14.8829 6.58702 14.55 6.25089C14.3914 6.09032 14.175 6 13.9494 6C13.7237 6 13.5073 6.09032 13.3487 6.25089L8.25022 11.3928C7.91626 11.7286 7.91626 12.2714 8.25022 12.6072L13.3485 17.7491C13.5073 17.9097 13.7237 18 13.9494 18C14.175 18 14.3914 17.9097 14.5502 17.7491C14.8829 17.4129 14.8829 16.8708 14.5498 16.5347L10.0522 12.0009Z" fill="#34A853"/>
-</g>
-<defs>
-<clipPath id="bgblur_0_137_1098_clip_path" transform="translate(136.98 136.98)"><rect y="24" width="24" height="24" rx="12" transform="rotate(-90 0 24)"/>
-</clipPath><radialGradient id="paint0_radial_137_1098" cx="0" cy="0" r="1" gradientTransform="matrix(24 24 -24 2.4576 0 24)" gradientUnits="userSpaceOnUse">
-<stop stop-color="#B86E9F"/>
-<stop offset="1" stop-color="#662525"/>
-</radialGradient>
-</defs>
+  <path
+    fill="#34A853"
+    d="M13.748 12 9.25 16.535a.88.88 0 0 0 .001 1.214c.158.16.375.25.6.25.226 0 .442-.09.6-.25l5.1-5.142a.83.83 0 0 0 0-1.214l-5.1-5.142a.85.85 0 0 0-.6-.25.85.85 0 0 0-.6.25.83.83 0 0 0 0 1.214L13.748 12Z"
+  />
 </svg>
