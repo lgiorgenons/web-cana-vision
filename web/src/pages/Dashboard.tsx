@@ -168,29 +168,29 @@ const Dashboard = () => {
               </button>
             ))}
 
-            <div className="mt-2 rounded-2xl bg-[#F0F0F0] p-3">
-              <p className="text-xs font-semibold text-slate-500">Tema</p>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+          
+            <div className="flex items-center gap-2 rounded-[10px] bg-[#F0F0F0] p-[6px]">
                 <button
                   type="button"
                   onClick={() => setThemeMode("light")}
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-semibold transition ${
                     themeMode === "light" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >
+                  <img src="/images/ic_light.svg" alt="Tema claro" className="h-6 w-6" />
                   Claro
                 </button>
                 <button
                   type="button"
                   onClick={() => setThemeMode("dark")}
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-semibold transition ${
                     themeMode === "dark" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >
+                  <img src="/images/ic_dark.svg" alt="Tema escuro" className="h-6 w-6" />
                   Escuro
                 </button>
               </div>
-            </div>
           </div>
         </aside>
       ) : (

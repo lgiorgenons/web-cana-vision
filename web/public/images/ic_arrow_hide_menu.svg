@@ -1,6 +1,14 @@
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path
-    fill="#34A853"
-    d="M13.748 12 9.25 16.535a.88.88 0 0 0 .001 1.214c.158.16.375.25.6.25.226 0 .442-.09.6-.25l5.1-5.142a.83.83 0 0 0 0-1.214l-5.1-5.142a.85.85 0 0 0-.6-.25.85.85 0 0 0-.6.25.83.83 0 0 0 0 1.214L13.748 12Z"
-  />
+<foreignObject x="-136.98" y="-136.98" width="297.96" height="297.96"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(68.49px);clip-path:url(#bgblur_0_137_1098_clip_path);height:100%;width:100%"></div></foreignObject><g data-figma-bg-blur-radius="136.98">
+<rect y="24" width="24" height="24" rx="12" transform="rotate(-90 0 24)" fill="#F0F0F0"/>
+<rect x="0.19025" y="23.8097" width="23.6195" height="23.6195" rx="11.8097" transform="rotate(-90 0.19025 23.8097)" stroke="url(#paint0_radial_137_1098)" stroke-opacity="0.48" stroke-width="0.3805" style="mix-blend-mode:lighten"/>
+<path opacity="0.8" fill-rule="evenodd" clip-rule="evenodd" d="M13.7476 11.9991L9.24978 16.5347C8.91688 16.8709 8.91688 17.413 9.24978 17.7491C9.40841 17.9097 9.62478 18 9.85045 18C10.0761 18 10.2925 17.9097 10.4511 17.7491L15.5496 12.6072C15.8835 12.2714 15.8835 11.7286 15.5496 11.3928L10.4513 6.25089C10.2925 6.09032 10.0761 6 9.85045 6C9.62478 6 9.40841 6.09032 9.24957 6.25089C8.91688 6.58707 8.91688 7.1292 9.25 7.46527L13.7476 11.9991Z" fill="#34A853"/>
+</g>
+<defs>
+<clipPath id="bgblur_0_137_1098_clip_path" transform="translate(136.98 136.98)"><rect y="24" width="24" height="24" rx="12" transform="rotate(-90 0 24)"/>
+</clipPath><radialGradient id="paint0_radial_137_1098" cx="0" cy="0" r="1" gradientTransform="matrix(24 24 -24 2.4576 0 24)" gradientUnits="userSpaceOnUse">
+<stop stop-color="#B86E9F"/>
+<stop offset="1" stop-color="#662525"/>
+</radialGradient>
+</defs>
 </svg>
