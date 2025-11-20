@@ -40,6 +40,9 @@ type Field = {
   daysToHarvest: number;
   cloudCover: string;
   productId: string;
+  lst: string;
+  rainfall: string;
+  ndwi: string;
 };
 
 const currentScene = {
@@ -73,6 +76,9 @@ const fields: Field[] = [
     daysToHarvest: 45,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "28°C",
+    rainfall: "45mm",
+    ndwi: "0.35",
   },
   {
     id: "talhao-2",
@@ -96,6 +102,9 @@ const fields: Field[] = [
     daysToHarvest: 61,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "29°C",
+    rainfall: "42mm",
+    ndwi: "0.28",
   },
   {
     id: "talhao-3",
@@ -119,6 +128,9 @@ const fields: Field[] = [
     daysToHarvest: 21,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "27°C",
+    rainfall: "50mm",
+    ndwi: "0.38",
   },
   {
     id: "talhao-4",
@@ -142,6 +154,9 @@ const fields: Field[] = [
     daysToHarvest: 96,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "29°C",
+    rainfall: "40mm",
+    ndwi: "0.32",
   },
   {
     id: "talhao-5",
@@ -165,6 +180,9 @@ const fields: Field[] = [
     daysToHarvest: 56,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "28°C",
+    rainfall: "48mm",
+    ndwi: "0.36",
   },
   {
     id: "talhao-6",
@@ -188,6 +206,9 @@ const fields: Field[] = [
     daysToHarvest: 28,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "28°C",
+    rainfall: "44mm",
+    ndwi: "0.34",
   },
   {
     id: "talhao-7",
@@ -211,6 +232,9 @@ const fields: Field[] = [
     daysToHarvest: 106,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "38°C",
+    rainfall: "5mm",
+    ndwi: "-0.10",
   },
   {
     id: "talhao-8",
@@ -234,6 +258,9 @@ const fields: Field[] = [
     daysToHarvest: 121,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
+    lst: "29°C",
+    rainfall: "41mm",
+    ndwi: "0.30",
   },
 ];
 
@@ -241,6 +268,40 @@ const healthColor = (label: Field["healthLabel"]) => {
   if (label === "Good") return "text-emerald-500 bg-emerald-500/10";
   if (label === "Low") return "text-amber-500 bg-amber-500/10";
   return "text-red-500 bg-red-500/10";
+};
+
+
+
+const getDiagnostic = (field: Field) => {
+  const ndwi = parseFloat(field.ndwi);
+  const lst = parseFloat(field.lst.replace("°C", ""));
+  const rainfall = parseFloat(field.rainfall.replace("mm", ""));
+  const health = field.health;
+
+  if (ndwi < 0 && lst > 35 && rainfall < 10) {
+    return {
+      diagnosis: "Estresse Hídrico (Murcha Fisiológica)",
+      probability: "Alta",
+      action: "Verificar irrigação e previsão climática",
+      color: "text-orange-600 bg-orange-50 border-orange-200",
+    };
+  }
+
+  if (health < 0.8 && rainfall > 30 && lst < 30) {
+    return {
+      diagnosis: "Possível Murcha Infecciosa",
+      probability: "Média",
+      action: "Realizar inspeção fitossanitária em campo",
+      color: "text-red-600 bg-red-50 border-red-200",
+    };
+  }
+
+  return {
+    diagnosis: "Condições Normais",
+    probability: "Baixa",
+    action: "Manter monitoramento padrão",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+  };
 };
 
 const layerOptions = ["NDVI", "EVI", "NDRE", "NDMI", "True Color"];
@@ -570,12 +631,12 @@ const Hotspots = () => {
                         <span className="font-semibold text-slate-900">{selectedField.ndvi}</span>
                       </div>
                       <div className="flex items-center justify-between text-slate-600">
-                        <span>NDRE</span>
-                        <span className="font-semibold text-slate-900">{selectedField.ndre}</span>
+                        <span>NDWI</span>
+                        <span className="font-semibold text-slate-900">{selectedField.ndwi}</span>
                       </div>
                       <div className="flex items-center justify-between text-slate-600">
-                        <span>NDMI</span>
-                        <span className="font-semibold text-slate-900">{selectedField.ndmi}</span>
+                        <span>NDRE</span>
+                        <span className="font-semibold text-slate-900">{selectedField.ndre}</span>
                       </div>
                       <div className="flex items-center justify-between text-slate-600">
                         <span>EVI</span>
@@ -584,20 +645,37 @@ const Hotspots = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-xl bg-slate-50 p-3 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Droplets className="h-4 w-4 text-sky-500" />
-                        <p className="text-slate-500 text-xs">Umidade do solo</p>
-                      </div>
-                      <p className="text-lg font-semibold text-slate-900">{selectedField.soilMoisture}</p>
+                  {/* Diagnostic Assistant */}
+                  <div className={`rounded-xl border p-3 ${getDiagnostic(selectedField).color}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Activity className="h-4 w-4" />
+                      <p className="text-xs font-bold uppercase tracking-wider">Assistente de Diagnóstico</p>
                     </div>
-                    <div className="rounded-xl bg-slate-50 p-3 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-emerald-500" />
-                        <p className="text-slate-500 text-xs">Produtividade estimada</p>
+                    <p className="text-sm font-bold">{getDiagnostic(selectedField).diagnosis}</p>
+                    <p className="text-xs mt-1 opacity-80">Ação sugerida: {getDiagnostic(selectedField).action}</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="rounded-xl bg-slate-50 p-2 space-y-1">
+                      <div className="flex items-center gap-1">
+                        <Thermometer className="h-3 w-3 text-orange-500" />
+                        <p className="text-slate-500 text-[10px]">LST</p>
                       </div>
-                      <p className="text-lg font-semibold text-slate-900">{selectedField.productivity}</p>
+                      <p className="text-sm font-semibold text-slate-900">{selectedField.lst}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2 space-y-1">
+                      <div className="flex items-center gap-1">
+                        <Droplets className="h-3 w-3 text-sky-500" />
+                        <p className="text-slate-500 text-[10px]">Chuva</p>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-900">{selectedField.rainfall}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2 space-y-1">
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-emerald-500" />
+                        <p className="text-slate-500 text-[10px]">Produt.</p>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-900">{selectedField.productivity}</p>
                     </div>
                   </div>
 
