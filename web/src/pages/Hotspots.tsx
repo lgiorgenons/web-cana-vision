@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -256,6 +256,28 @@ const Hotspots = () => {
   const showPanels = !isFullscreen;
   const toggleFullscreen = () => setIsFullscreen((prev) => !prev);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [isFullscreen]);
+
+  const getPixelPosition = (percent: string, total: number) => {
+    return (parseFloat(percent) / 100) * total;
+  };
+
   const selectedField = useMemo(() => fields.find((f) => f.id === selectedFieldId) ?? fields[0], [selectedFieldId]);
   const overallHealth = useMemo(
     () => Math.round((fields.reduce((acc, f) => acc + f.health, 0) / fields.length) * 100),
@@ -376,7 +398,7 @@ const Hotspots = () => {
         )}
 
         {/* Main Content */}
-        <div className="relative flex-1 overflow-hidden rounded-[15px] bg-slate-900">
+        <div ref={containerRef} className="relative flex-1 overflow-hidden rounded-[15px] bg-slate-900">
           {/* Background Image / Map Placeholder */}
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=3200&auto=format&fit=crop"
@@ -457,21 +479,49 @@ const Hotspots = () => {
                 </div>
 
                 {/* Connection Line (Only for selected) */}
-                {field.id === selectedFieldId && detailPanelOpen && (
-                  <svg className="pointer-events-none absolute left-full top-1/2 h-32 w-32 -translate-y-1/2 overflow-visible">
-                    <path
-                      d="M 0 0 L 50 -50 L 100 -50"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="2"
-                      className="drop-shadow-md"
-                    />
-                    <circle cx="0" cy="0" r="4" fill="white" />
-                  </svg>
-                )}
+                {/* Removed static SVG from here, moved to global layer */}
               </div>
             ))}
           </div>
+
+          {/* Connector Line Layer */}
+          {detailPanelOpen && selectedField && containerSize.width > 0 && (
+             <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible">
+               <defs>
+                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                   <feGaussianBlur stdDeviation="2" result="blur" />
+                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                 </filter>
+               </defs>
+               {(() => {
+                  const startX = getPixelPosition(selectedField.position.left, containerSize.width) + getPixelPosition(selectedField.position.width, containerSize.width);
+                  const startY = getPixelPosition(selectedField.position.top, containerSize.height) + getPixelPosition(selectedField.position.height, containerSize.height) / 2;
+                  
+                  const endX = containerSize.width - 24 - 360; // Right-6 (24px) - Panel Width (360px)
+                  const endY = 24 + 100; // Top-6 (24px) + Offset
+
+                  const controlPoint1X = startX + 50;
+                  const controlPoint1Y = startY;
+                  const controlPoint2X = endX - 50;
+                  const controlPoint2Y = endY;
+
+                  return (
+                    <>
+                      <path
+                        d={`M ${startX} ${startY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${endX} ${endY}`}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                        className="drop-shadow-md opacity-80"
+                        filter="url(#glow)"
+                      />
+                      <circle cx={startX} cy={startY} r="3" fill="white" className="animate-pulse" />
+                      <circle cx={endX} cy={endY} r="3" fill="white" />
+                    </>
+                  );
+               })()}
+             </svg>
+          )}
 
           {/* Detail Panel (Floating) */}
           {detailPanelOpen && selectedField && (
@@ -592,21 +642,7 @@ const Hotspots = () => {
             </div>
           )}
 
-          {/* Bottom Right Navigation */}
-          <div className="absolute bottom-8 right-8 z-20 flex flex-col items-end gap-2">
-            {fields.slice(4, 8).map((f) => (
-              <div
-                key={f.id}
-                className="cursor-pointer rounded-full bg-slate-900/80 px-3 py-1.5 text-xs text-white backdrop-blur-md hover:bg-slate-800"
-                onClick={() => {
-                  setSelectedFieldId(f.id);
-                  setDetailPanelOpen(true);
-                }}
-              >
-                {f.name}
-              </div>
-            ))}
-          </div>
+
 
           {/* Bottom Left Controls */}
           <div className="absolute bottom-8 left-8 z-20 flex gap-3">
