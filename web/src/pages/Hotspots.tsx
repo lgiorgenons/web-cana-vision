@@ -104,7 +104,7 @@ const fields: Field[] = [
     daysToHarvest: 61,
     cloudCover: "8%",
     productId: "S2B_MSIL2A_20240815",
-    productId: "S2B_MSIL2A_20240815",
+
     lst: "29°C",
     rainfall: "42mm",
     ndwi: "0.15",
@@ -280,7 +280,39 @@ const healthColor = (label: Field["healthLabel"]) => {
   return "text-red-500 bg-red-500/10";
 };
 
+type RiskLevel = "Baixo" | "Medio" | "Alto";
 
+const parseIndex = (value: string) => {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const getSmcRisk = (field: Field): RiskLevel => {
+  const ndvi = parseIndex(field.ndvi);
+  const ndmi = parseIndex(field.ndmi);
+  const ndre = parseIndex(field.ndre);
+  const ndwi = parseIndex(field.ndwi);
+
+  const high =
+    ndwi < 0.2 &&
+    ndmi < 0.38 &&
+    ndre < 0.46 &&
+    ndvi > 0.55;
+
+  const medium =
+    (ndmi < 0.44 && ndre < 0.5) ||
+    (ndwi < 0.3 && ndvi > 0.5);
+
+  if (high) return "Alto";
+  if (medium) return "Medio";
+  return "Baixo";
+};
+
+const riskBadgeClass = (risk: RiskLevel) => {
+  if (risk === "Alto") return "bg-red-100 text-red-700 border-red-200";
+  if (risk === "Medio") return "bg-amber-100 text-amber-700 border-amber-200";
+  return "bg-emerald-100 text-emerald-700 border-emerald-200";
+};
 
 const getDiagnostic = (field: Field) => {
   const ndwi = parseFloat(field.ndwi);
@@ -334,7 +366,7 @@ const getPolygonColor = (label: Field["healthLabel"]) => {
 const layerOptions = ["NDVI", "EVI", "NDRE", "NDMI", "True Color"];
 
 const Hotspots = () => {
-  const [activeTab, setActiveTab] = useState<"details" | "field" | "task" | "device" | "activity">("field");
+
   const [viewMode, setViewMode] = useState<"analytic" | "cctv">("analytic");
   const [selectedFieldId, setSelectedFieldId] = useState(fields[0].id);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -378,29 +410,17 @@ const Hotspots = () => {
         {showPanels && (
           <Card className="flex w-[380px] flex-col overflow-hidden rounded-[15px] border-0 bg-[#F0F0F0] shadow-none">
           {/* Sidebar Header / Tabs */}
-          <div className="flex items-center gap-6 border-b border-slate-200 px-6 py-5">
-            {["Details", "Field", "Task", "Device", "Activity"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab.toLowerCase() as "details" | "field" | "task" | "device" | "activity")}
-                className={`relative text-sm font-medium transition-colors ${
-                  activeTab === tab.toLowerCase()
-                    ? "text-slate-900"
-                    : "text-slate-400 hover:text-slate-600"
-                }`}
-              >
-                {tab}
-                {activeTab === tab.toLowerCase() && (
-                  <div className="absolute -bottom-[21px] left-0 h-0.5 w-full bg-slate-900" />
-                )}
-              </button>
-            ))}
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+            <h2 className="text-lg font-semibold text-slate-900">Monitoramento</h2>
+            <div className="flex gap-2">
+               <Badge variant="outline" className="border-slate-200 bg-white text-slate-600">8 Talhões</Badge>
+            </div>
           </div>
 
           {/* Sidebar Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            {activeTab === "field" && (
-              <div className="space-y-6">
+            <div className="space-y-6">
                 {/* Overall Health */}
                 <div>
                   <p className="text-sm font-medium text-slate-500">Saude geral (indices)</p>
@@ -429,16 +449,20 @@ const Hotspots = () => {
                   {fields.map((field) => (
                     <button
                       key={field.id}
-                      onClick={() => {
-                        setSelectedFieldId(field.id);
-                        setDetailPanelOpen(true);
-                      }}
                       className={`group relative w-full overflow-hidden rounded-2xl border p-4 text-left transition-all ${
                         field.id === selectedFieldId
                           ? "border-emerald-500 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
                           : "border-transparent bg-white hover:bg-slate-50"
                       }`}
+                      onClick={() => {
+                        setSelectedFieldId(field.id);
+                        setDetailPanelOpen(true);
+                      }}
                     >
+                      {(() => {
+                        const risk = getSmcRisk(field);
+                        return (
+                          <>
                       {field.id === selectedFieldId && (
                         <div className="absolute left-0 top-0 h-full w-1.5 bg-emerald-500" />
                       )}
@@ -450,6 +474,11 @@ const Hotspots = () => {
                             <span>{field.layer}</span>
                             <span className="text-slate-300">•</span>
                             <span>{field.lastImage}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`rounded-full border px-2 py-[2px] text-[10px] font-semibold ${riskBadgeClass(risk)}`}>
+                              Risco SMC: {risk}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -476,11 +505,14 @@ const Hotspots = () => {
                           </div>
                         </div>
                       </div>
+                          </>
+                        );
+                      })()}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+
           </div>
         </Card>
         )}
@@ -642,6 +674,28 @@ const Hotspots = () => {
                       <p className="text-xs text-slate-400">Area</p>
                       <p className="text-base font-medium text-slate-900">{selectedField.area}</p>
                       <p className="text-[11px] text-slate-500">Camada ativa: {activeLayer}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl border border-slate-200 p-3 space-y-1">
+                      <p className="text-xs text-slate-400">Risco SMC</p>
+                      {(() => {
+                        const risk = getSmcRisk(selectedField);
+                        return (
+                          <span className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${riskBadgeClass(risk)}`}>
+                            {risk}
+                          </span>
+                        );
+                      })()}
+                      <p className="text-[11px] text-slate-500">
+                        Baseado em NDWI/NDMI e NDRE (Sentinel-2).
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 p-3 space-y-1">
+                      <p className="text-xs text-slate-400">Confianca</p>
+                      <p className="text-sm font-semibold text-slate-900">{getDiagnostic(selectedField).probability}</p>
+                      <p className="text-[11px] text-slate-500">Cruza indice + clima</p>
                     </div>
                   </div>
 
