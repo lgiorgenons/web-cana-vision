@@ -202,7 +202,7 @@ const fields: Field[] = [
     lastImage: "15/08/2024",
     trend: "+1%",
     ndvi: "0.75",
-    ndre: "0.55",
+    ndre: "0.45",
     ndmi: "0.48",
     evi: "0.60",
     soilMoisture: "70%",
@@ -346,6 +346,18 @@ const getDiagnostic = (field: Field) => {
       probability: "Média",
       action: "Realizar inspeção fitossanitária em campo",
       color: "text-amber-600 bg-amber-50 border-amber-200",
+    };
+  }
+
+
+  // Nutritional Deficiency (NDRE) Pattern: Low NDRE (Chlorophyll) but High NDVI (Biomass)
+  const ndre = parseFloat(field.ndre);
+  if (ndre < 0.5 && ndvi > 0.6) {
+    return {
+      diagnosis: "Deficiência Nutricional (N) ou Doença Foliar",
+      probability: "Média",
+      action: "Realizar análise foliar e verificar adubação",
+      color: "text-yellow-700 bg-yellow-100 border-yellow-300",
     };
   }
 
@@ -736,7 +748,7 @@ const Hotspots = () => {
                     <p className="text-xs mt-1 opacity-80">Ação sugerida: {getDiagnostic(selectedField).action}</p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-4 gap-2 text-sm">
                     <div className="rounded-xl bg-slate-50 p-2 space-y-1">
                       <div className="flex items-center gap-1">
                         <Thermometer className="h-3 w-3 text-orange-500" />
@@ -757,6 +769,13 @@ const Hotspots = () => {
                         <p className="text-slate-500 text-[10px]">Produt.</p>
                       </div>
                       <p className="text-sm font-semibold text-slate-900">{selectedField.productivity}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2 space-y-1">
+                      <div className="flex items-center gap-1">
+                        <Droplets className="h-3 w-3 text-blue-500" />
+                        <p className="text-slate-500 text-[10px]">Umidade</p>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-900">{selectedField.soilMoisture}</p>
                     </div>
                   </div>
 
