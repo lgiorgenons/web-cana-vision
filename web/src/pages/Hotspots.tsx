@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   Activity,
   AlertTriangle,
+  ArrowDownRight,
   ArrowUpRight,
   Droplets,
   Leaf,
   Layers,
   Maximize2,
+  Minus,
   Scan,
   Sprout,
   Thermometer,
@@ -782,10 +784,24 @@ const Hotspots = () => {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-xl bg-slate-50 p-3 space-y-1">
                       <div className="flex items-center gap-2">
-                        <Thermometer className="h-4 w-4 text-orange-500" />
                         <p className="text-slate-500 text-xs">Tendencia</p>
                       </div>
-                      <p className="text-sm font-semibold text-slate-900">{selectedField.trend}</p>
+                      <div className="flex items-center gap-2">
+                         {selectedField.trend.startsWith("+") ? (
+                           <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+                         ) : selectedField.trend.startsWith("-") ? (
+                           <ArrowDownRight className="h-5 w-5 text-red-500" />
+                         ) : (
+                           <Minus className="h-5 w-5 text-slate-400" />
+                         )}
+                         <p className={`text-sm font-semibold ${
+                           selectedField.trend.startsWith("+") ? "text-emerald-600" :
+                           selectedField.trend.startsWith("-") ? "text-red-600" :
+                           "text-slate-600"
+                         }`}>
+                           {selectedField.trend}
+                         </p>
+                      </div>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-3 space-y-1">
                       <div className="flex items-center gap-2">
