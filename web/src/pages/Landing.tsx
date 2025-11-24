@@ -68,9 +68,9 @@ const Landing = () => {
         
         {/* Center Links (Desktop) */}
         <div className="hidden items-center gap-8 md:flex">
-          <a href="#solutions" className="text-sm font-medium text-slate-200 transition hover:text-white">Soluções</a>
-          <a href="#technology" className="text-sm font-medium text-slate-200 transition hover:text-white">Tecnologia</a>
-          <a href="#about" className="text-sm font-medium text-slate-200 transition hover:text-white">Sobre</a>
+          <a href="#solutions" className="text-[16px] font-normal text-white transition hover:text-slate-200">Soluções</a>
+          <a href="#technology" className="text-[16px] font-normal text-white transition hover:text-slate-200">Tecnologia</a>
+          <a href="#about" className="text-[16px] font-normal text-white transition hover:text-slate-200">Sobre</a>
         </div>
 
         {/* Right Actions */}
@@ -100,14 +100,14 @@ const Landing = () => {
         {/* Content (Left Aligned, Bottom) */}
         <div className="relative z-10 max-w-full text-center px-4">
           {/* Headline */}
-          <h1 className="text-5xl font-bold tracking-tight text-white drop-shadow-lg md:text-6xl lg:text-7xl leading-[1.1]">
+          <h1 className="text-5xl font-normal tracking-tight text-white drop-shadow-lg md:text-6xl lg:text-7xl leading-[1.1]">
             Monitoramento de <br />
             <span className="text-[#34A853] drop-shadow-md">Cana-de-Açúcar</span> com <br />
             Inteligência Artificial
           </h1>
 
           {/* Subheadline */}
-          <p className="mx-auto mt-8 max-w-2xl text-lg text-slate-100 drop-shadow-md leading-relaxed font-medium">
+          <p className="mx-auto mt-8 max-w-2xl text-lg text-slate-100 drop-shadow-md leading-relaxed font-normal">
             Desbloqueie o potencial da sua lavoura. Explore técnicas avançadas para aumentar a produtividade e conectar-se com a terra através de dados precisos.
           </p>
 
