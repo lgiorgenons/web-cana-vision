@@ -115,11 +115,11 @@ const Landing = () => {
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link to="/app">
-              <Button size="lg" className="h-14 rounded-full bg-[#34A853] px-8 text-[16px] font-medium text-white hover:bg-[#2E9648] transition-transform hover:scale-105 shadow-lg shadow-[#34A853]/20">
+              <Button size="lg" className="h-12 rounded-full bg-black/50 border border-[#34A853] px-8 text-[16px] font-medium text-[#34A853] hover:bg-black/70 transition-transform hover:scale-105 backdrop-blur-sm">
                 Começar Agora <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="h-14 rounded-full border-white bg-transparent px-8 text-[16px] font-medium text-white hover:bg-white hover:text-slate-900 transition-all">
+            <Button variant="outline" size="lg" className="h-12 rounded-full border-white bg-transparent px-8 text-[16px] font-medium text-white hover:bg-white hover:text-slate-900 transition-all">
               Saiba Mais
             </Button>
           </div>
