@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+import heroGif from "../assets/gif_campo.gif";
+
 const Landing = () => {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [activeAccordion, setActiveAccordion] = React.useState(0);
@@ -91,7 +93,7 @@ const Landing = () => {
         {/* Background Image (Full Screen) */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/img_hero.png"
+            src={heroGif}
             alt="Sugarcane Field Top View"
             className="h-full w-full object-cover brightness-[0.30]"
           />
@@ -102,14 +104,14 @@ const Landing = () => {
           {/* Headline */}
           <h1 className="flex flex-col items-center gap-4 text-5xl font-normal tracking-[-3px] text-white drop-shadow-lg md:text-6xl lg:text-[72px] leading-[1.2]">
             <span>
-              Transformando o <span className="text-[#34A853] drop-shadow-md">Agronegócio</span>
+              Detecte problemas na sua <span className="text-[#34A853] drop-shadow-md">Lavoura</span>
             </span>
-            <span>com Monitoramento via Satélite</span>
+            <span>antes que apareçam</span>
           </h1>
 
           {/* Subheadline */}
           <p className="mx-auto mt-8 max-w-3xl text-[20px] tracking-[0px] text-slate-100 drop-shadow-md leading-[1.5] font-normal">
-            Desbloqueie o potencial da sua lavoura. Explore técnicas avançadas para aumentar a produtividade e conectar-se com a terra através de dados precisos.
+            Monitoramento via satélite com NDVI, NDRE e NDMI, gerando alertas automáticos baseados nos cálculos desses índices.
           </p>
 
           {/* CTA Buttons */}
